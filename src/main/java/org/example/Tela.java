@@ -34,13 +34,13 @@ public class Tela {
                 System.out.println("Digite o novo nome:");
                 String novoNome = digitar.nextLine();
 
-                System.out.println("Digite a nova idade:");
-                int novaIdade = digitar.nextInt();
+                System.out.println("Digite a novo CPF:");
+                String novoCpf = digitar.nextLine();
 
                 System.out.println("Digite o novo salário:");
                 double novoSalario = digitar.nextDouble();
 
-                modificarFuncionario(idParaModificar, novoNome, novaIdade, novoSalario);
+                modificarFuncionario(idParaModificar, novoNome, novoCpf, novoSalario);
             } else if (input == 4) {
                 deletarFuncionario();
             } else if (input == 0) {

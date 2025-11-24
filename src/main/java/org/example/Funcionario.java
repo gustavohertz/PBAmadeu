@@ -3,55 +3,32 @@ package org.example;
 public class Funcionario {
     private int id;
     private String nome;
-    private int idade;
+    private String cpf;
     private double salario;
 
-    public Funcionario(int id, String nome, int idade, double salario) {
+    // --- ADICIONE ESTE BLOCO (Obrigatório para o Spring Boot) ---
+    public Funcionario() {
+    }
+    // ------------------------------------------------------------
+
+    // O construtor que você já tinha (pode manter)
+    public Funcionario(int id, String nome, String cpf, double salario) {
         this.id = id;
         this.nome = nome;
-        this.idade = idade;
+        this.cpf = cpf;
         this.salario = salario;
     }
 
-    @Override
-    public String toString() {
-        return "Funcionario{" +
-                "id=" + id +
-                ", nome='" + nome + '\'' +
-                ", idade=" + idade +
-                ", salario=" + salario +
-                '}';
-    }
+    // Certifique-se também de ter TODOS os Getters e Setters abaixo
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
-    public int getId() {
-        return id;
-    }
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
 
-    public void setId(int id) {
-        this.id = id;
-    }
+    public String getCpf() { return cpf; }
+    public void setCpf(String cpf) { this.cpf = cpf; }
 
-    public String getNome() {
-        return nome;
-    }
-
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
-
-    public int getIdade() {
-        return idade;
-    }
-
-    public void setIdade(int idade) {
-        this.idade = idade;
-    }
-
-    public double getSalario() {
-        return salario;
-    }
-
-    public void setSalario(double salario) {
-        this.salario = salario;
-    }
+    public double getSalario() { return salario; }
+    public void setSalario(double salario) { this.salario = salario; }
 }

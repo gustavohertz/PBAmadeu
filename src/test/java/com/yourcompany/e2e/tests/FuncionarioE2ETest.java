@@ -1,35 +1,33 @@
 package com.yourcompany.e2e.tests;
 
+import com.yourcompany.e2e.driver.DriverFactory;
 import com.yourcompany.e2e.pages.FuncionarioFormPage;
 import com.yourcompany.e2e.pages.FuncionarioListPage;
-import io.github.bonigarcia.wdm.WebDriverManager;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
 
 import java.time.Duration;
-import java.util.List;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class FuncionarioE2ETest {
     private WebDriver driver;
     private FuncionarioListPage listPage;
     private FuncionarioFormPage formPage;
-    // Ajuste para o endereço local onde você serve o index.html
-    private final String baseUrl = "http://localhost:8080";
-
-    @BeforeAll
-    public void setupClass() {
-        WebDriverManager.chromedriver().setup();
-    }
+    private final String baseUrl = "http://localhost:8080"; // Ajuste conforme seu servidor
 
     @BeforeEach
     public void setup() {
-        driver = new ChromeDriver();
+        // Usa a Factory agora (Requisito: flexibilidade de navegadores)
+        driver = DriverFactory.getDriver();
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
+        driver.manage().window().maximize();
+
         listPage = new FuncionarioListPage(driver);
         formPage = new FuncionarioFormPage(driver);
-        // limpar localStorage para testes consistentes (apenas para o front demo)
+
+        // Limpeza de estado para garantir independência dos testes
         driver.get(baseUrl + "/index.html");
         ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("localStorage.clear()");
     }
@@ -39,36 +37,35 @@ public class FuncionarioE2ETest {
         if (driver != null) driver.quit();
     }
 
-    @Test
-    public void fluxoCriarListarExcluir() {
+    // REQUISITO: Teste Parametrizado (Testa múltiplos cenários de CPF inválido)
+    @ParameterizedTest
+    @ValueSource(strings = {"123", "abc.def.ghi-jk", "", "111111111"})
+    @DisplayName("Deve falhar ao tentar cadastrar com CPFs inválidos")
+    public void testeValidacaoCpfInvalido(String cpfInvalido) {
         listPage.open(baseUrl);
         listPage.clickNovo();
-        formPage.fillForm("João Silva", "12345678901");
+
+        // Tenta preencher com dados inválidos vindos da fonte de dados (@ValueSource)
+        formPage.fillForm("Teste Parametrizado", cpfInvalido);
         formPage.submit();
-        // voltar à listagem
-        listPage.open(baseUrl);
-        List<String> nomes = listPage.listarNomes();
-        Assertions.assertTrue(nomes.contains("João Silva"));
-        // excluir
-        String id = ((String) ((org.openqa.selenium.JavascriptExecutor) driver)
-                .executeScript("return JSON.parse(localStorage.getItem('funcs'))[0].id"));
-        listPage.clickExcluirById(id);
-        // confirm via JS alert in demo code triggers browser confirm -> we already handled confirm with native confirm
-        // no need to accept because demo uses confirm() and then alert('Excluído'); for demo, adjust if needed
-        // Recarrega e confere exclusão
-        listPage.open(baseUrl);
-        Assertions.assertFalse(listPage.listarNomes().contains("João Silva"));
+
+        // Asserção: Se o CPF é inválido, o sistema NÃO deve ter voltado para a Home (index.html)
+        // Deve permanecer no form ou mostrar erro.
+        boolean aindaNoFormulario = driver.getCurrentUrl().contains("form.html");
+        Assertions.assertTrue(aindaNoFormulario, "Deveria bloquear o cadastro com CPF: " + cpfInvalido);
     }
 
-
     @Test
-    public void testeValidacaoCpfInvalido() {
+    @DisplayName("Fluxo Feliz: Criar e Listar Funcionário")
+    public void fluxoCriarListar() {
         listPage.open(baseUrl);
         listPage.clickNovo();
-        formPage.fillForm("Nome X", "abc"); // inválido
+
+        // Preenche com salário agora
+        formPage.fillForm("Maria Souza", "123.456.789-00");
         formPage.submit();
-        // Como form.html usa required + pattern, o navegador normalmente bloqueia o submit.
-        // Verificamos se ainda estamos na página do form (id vazio).
-        Assertions.assertTrue(driver.getCurrentUrl().contains("form.html"));
+
+        listPage.open(baseUrl);
+        Assertions.assertTrue(listPage.listarNomes().contains("Maria Souza"));
     }
 }

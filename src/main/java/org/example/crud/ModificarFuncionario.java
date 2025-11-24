@@ -10,14 +10,14 @@ import static org.example.crud.VisualizarFuncionario.visualizarFuncionario;
 
 
 public class ModificarFuncionario {
-    public static void modificarFuncionario(int id, String nome, int idade, double salario) {
+    public static void modificarFuncionario(int id, String nome, String cpf, double salario) {
         Optional<Funcionario> funcionarioOptional = getFuncionarioById(id);
         Scanner sc = new Scanner(System.in);
 
         if(funcionarioOptional.isPresent()) {
             Funcionario funcionario = funcionarioOptional.get();
             funcionario.setNome(nome);
-            funcionario.setIdade(idade);
+            funcionario.setCpf(cpf);
             funcionario.setSalario(salario);
         }
 

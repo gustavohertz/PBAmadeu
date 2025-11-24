@@ -11,49 +11,89 @@
     <h1 id="title">Novo Funcionário</h1>
     <form id="form">
         <input type="hidden" id="id"/>
+
         <div class="mb-3">
             <label class="form-label">Nome</label>
             <input id="nome" class="form-control" required/>
         </div>
+
         <div class="mb-3">
             <label class="form-label">CPF</label>
-            <input id="cpf" class="form-control" required pattern="\\d{11}"/>
+            <input id="cpf" class="form-control" required
+                   placeholder="000.000.000-00"
+                   oninput="mascaraCPF(this)"/>
         </div>
+
+        <div class="mb-3">
+            <label class="form-label">Salário (R$)</label>
+            <input id="salario" type="number" step="0.01" class="form-control" required min="1300"/>
+        </div>
+
         <button class="btn btn-primary" type="submit">Salvar</button>
         <a href="index.html" class="btn btn-secondary">Voltar</a>
     </form>
 </div>
 
 <script>
-    function save(e) {
-        e.preventDefault();
-        const id = document.getElementById('id').value || Date.now();
-        const nome = document.getElementById('nome').value;
-        const cpf = document.getElementById('cpf').value;
-        const arr = JSON.parse(localStorage.getItem('funcs') || '[]');
-        const idx = arr.findIndex(x => x.id == id);
-        const obj = { id, nome, cpf };
-        if (idx >= 0) arr[idx] = obj; else arr.push(obj);
-        localStorage.setItem('funcs', JSON.stringify(arr));
-        alert('Salvo com sucesso');
-        location.href = 'index.html';
+    function mascaraCPF(i) {
+        var v = i.value;
+        if(isNaN(v[v.length-1])){
+            i.value = v.substring(0, v.length-1);
+            return;
+        }
+        i.setAttribute("maxlength", "14");
+        if (v.length == 3 || v.length == 7) i.value += ".";
+        if (v.length == 11) i.value += "-";
     }
 
-    document.getElementById('form').addEventListener('submit', save);
+    async function save(e) {
+        e.preventDefault();
 
-    // Se veio hash /editar/ID, preencher campos
-    const h = location.hash;
-    if (h && h.startsWith('#/editar/')) {
-        const id = h.split('/')[2];
-        const arr = JSON.parse(localStorage.getItem('funcs') || '[]');
-        const obj = arr.find(x => x.id == id);
-        if (obj) {
-            document.getElementById('id').value = obj.id;
-            document.getElementById('nome').value = obj.nome;
-            document.getElementById('cpf').value = obj.cpf;
-            document.getElementById('title').textContent = 'Editar Funcionário';
+        // Verifica se o campo existe antes de tentar ler (boa prática)
+        const salarioInput = document.getElementById('salario');
+        if (!salarioInput) {
+            alert("Erro fatal: Campo de salário não encontrado no HTML");
+            return;
+        }
+
+        const idInput = document.getElementById('id').value;
+        // Gera um ID aleatório temporário se for vazio, apenas para testes
+        const id = idInput ? parseInt(idInput) : Math.floor(Math.random() * 100000);
+
+        const payload = {
+            id: id,
+            nome: document.getElementById('nome').value,
+            // Remove pontuação do CPF para enviar limpo ao Java (opcional, depende do seu backend)
+            // Se o Java espera formatado, mantenha .value. Se espera 11 dígitos, use a linha abaixo:
+            // cpf: document.getElementById('cpf').value.replace(/\D/g, ''),
+            cpf: document.getElementById('cpf').value,
+            salario: parseFloat(salarioInput.value)
+        };
+
+        try {
+            console.log("Enviando payload:", payload); // Para debug no F12
+
+            const response = await fetch('http://localhost:8080/funcionarios', {
+                method: 'POST', // Ou logica para PUT se for edição
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                alert('Salvo no Java com sucesso!');
+                location.href = 'index.html';
+            } else {
+                const msg = await response.text();
+                alert('Erro do servidor: ' + msg);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Erro de conexão: Verifique se o backend Java está rodando na porta 8080.');
         }
     }
+    document.getElementById('form').addEventListener('submit', save);
 </script>
 </body>
 </html>
